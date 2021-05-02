@@ -46,8 +46,8 @@ import com.pholema.tool.starter.hbase.utils.StringUtil;
 
 public class HBaseClient {
 	private static final Logger logger = LoggerFactory.getLogger(HBaseClient.class);
-	private org.apache.hadoop.conf.Configuration HBaseConf = org.apache.hadoop.hbase.HBaseConfiguration.create();
-	private Connection HBaseConnection;
+	private static org.apache.hadoop.conf.Configuration HBaseConf = org.apache.hadoop.hbase.HBaseConfiguration.create();
+	private static Connection HBaseConnection;
 	private static HBaseClient instance = null;
 	private static int TIMEOUT = 120000;
 	private static String MASTER = "127.0.0.1:60000*";
@@ -55,7 +55,7 @@ public class HBaseClient {
 	private static String ZOOKEEPER_CLIENTPORT = "2181";
 	private static Gson gson = new Gson();
 
-	public void init() {
+	public static void init() {
 		HBaseConf.clear();
 		HBaseConf.setInt("timeout", TIMEOUT);
 		HBaseConf.set("hbase.master", MASTER);
@@ -71,7 +71,7 @@ public class HBaseClient {
 		}
 	}
 
-	public void init(String name) {
+	public static void init(String name) {
 		HBaseConf.clear();
 		HBaseConf.addResource(name);
 		try {
