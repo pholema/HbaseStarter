@@ -55,7 +55,7 @@ public class HBaseClient {
 	private static String ZOOKEEPER_CLIENTPORT = "2181";
 	private static Gson gson = new Gson();
 
-	public HBaseClient() {
+	public void init() {
 		HBaseConf.clear();
 		HBaseConf.setInt("timeout", TIMEOUT);
 		HBaseConf.set("hbase.master", MASTER);
@@ -70,8 +70,8 @@ public class HBaseClient {
 			e.printStackTrace();
 		}
 	}
-	
-	public HBaseClient(String name) {
+
+	public void init(String name) {
 		HBaseConf.clear();
 		HBaseConf.addResource(name);
 		try {
@@ -103,7 +103,8 @@ public class HBaseClient {
 	 * @param zookeeperClientPort
 	 * @return
 	 */
-	public static HBaseClient getInstance(int timeout, String master, String zookeeperQuorum, String zookeeperClientPort) {
+	public static HBaseClient getInstance(int timeout, String master, String zookeeperQuorum,
+			String zookeeperClientPort) {
 		TIMEOUT = timeout;
 		MASTER = master;
 		ZOOKEEPER_QUORUM = zookeeperQuorum;
@@ -124,7 +125,8 @@ public class HBaseClient {
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean postStringValueBySingleColumn(String tableName, String columnFamily, String columnName, Map<String, String> map) throws Exception {
+	public boolean postStringValueBySingleColumn(String tableName, String columnFamily, String columnName,
+			Map<String, String> map) throws Exception {
 		try {
 			BufferedMutatorParams params = new BufferedMutatorParams(TableName.valueOf(tableName));
 			params.writeBufferSize(4 * 1024 * 1024);
@@ -154,12 +156,12 @@ public class HBaseClient {
 	 * 
 	 * @param tableName
 	 * @param columnFamily
-	 * @param map
-	 *            : ＜rowkey,＜columnName,value＞＞
+	 * @param map          : ＜rowkey,＜columnName,value＞＞
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean postStringValueByMultiColumn(String tableName, String columnFamily, Map<String, Map<String, String>> map) throws Exception {
+	public boolean postStringValueByMultiColumn(String tableName, String columnFamily,
+			Map<String, Map<String, String>> map) throws Exception {
 		try {
 			BufferedMutatorParams params = new BufferedMutatorParams(TableName.valueOf(tableName));
 			params.writeBufferSize(4 * 1024 * 1024);
@@ -209,12 +211,16 @@ public class HBaseClient {
 	 * @return
 	 * @throws Exception
 	 */
-	public <M> boolean postEntryMutator(String tableName, String columnFamily, Class<M> mClass, Map<String, Object> map) throws Exception {
+	public <M> boolean postEntryMutator(String tableName, String columnFamily, Class<M> mClass, Map<String, Object> map)
+			throws Exception {
 		return postEntryMutator(tableName, columnFamily, mClass, map, null);
 	}
 
 	/**
-	 * Post the entry object to Hbase by BufferedMutator if subRowKeyName !=null then key column(keyName+keyValue) value soNumber1 itemnumber-00-995-291 jsonString itemnumber-00-995-292 jsonString itemnumber-00-995-293 jsonString soNumber2 itemnumber-00-995-291 jsonString
+	 * Post the entry object to Hbase by BufferedMutator if subRowKeyName !=null
+	 * then key column(keyName+keyValue) value soNumber1 itemnumber-00-995-291
+	 * jsonString itemnumber-00-995-292 jsonString itemnumber-00-995-293 jsonString
+	 * soNumber2 itemnumber-00-995-291 jsonString
 	 *
 	 * @param tableName
 	 * @param columnFamily
@@ -224,7 +230,8 @@ public class HBaseClient {
 	 * @return
 	 * @throws Exception
 	 */
-	private <M> boolean postEntryMutator(String tableName, String columnFamily, Class<M> mClass, Map<String, Object> map, List<String> subRowKeyNames) throws Exception {
+	private <M> boolean postEntryMutator(String tableName, String columnFamily, Class<M> mClass,
+			Map<String, Object> map, List<String> subRowKeyNames) throws Exception {
 		try {
 			List<String> subRowKeyNames_lowerCase = new ArrayList<>();
 			if (subRowKeyNames != null) {
@@ -247,11 +254,12 @@ public class HBaseClient {
 
 			for (String rowKey : map.keySet()) {
 				Put put = null;
-                if (subRowKeyNames_lowerCase.size() == 0) {
+				if (subRowKeyNames_lowerCase.size() == 0) {
 					put = treatHBaseEntry(columnFamily, rowKey, mClass, map.get(rowKey));
 				} else {
 					// must testing
-					put = treatHBaseEntry4Subkey(columnFamily, rowKey, subRowKeyNames_lowerCase, mClass, map.get(rowKey));
+					put = treatHBaseEntry4Subkey(columnFamily, rowKey, subRowKeyNames_lowerCase, mClass,
+							map.get(rowKey));
 				}
 				if (put != null) {
 					mutator.mutate(put);
@@ -295,14 +303,15 @@ public class HBaseClient {
 							e.printStackTrace();
 						}
 						switch (method[i].getReturnType().getName()) {
-							case "java.util.Date":
-								columnValue = o == null ? null : DateUtil.getDateTime((Date) o, "yyyy-MM-dd HH:mm:ss");
-								break;
-							case "java.lang.Boolean":
-								columnName = "Is".concat(columnName.substring(0, 1).toUpperCase() + columnName.substring(1));
-							default:
-								columnValue = StringUtil.nullHandle(o);
-								break;
+						case "java.util.Date":
+							columnValue = o == null ? null : DateUtil.getDateTime((Date) o, "yyyy-MM-dd HH:mm:ss");
+							break;
+						case "java.lang.Boolean":
+							columnName = "Is"
+									.concat(columnName.substring(0, 1).toUpperCase() + columnName.substring(1));
+						default:
+							columnValue = StringUtil.nullHandle(o);
+							break;
 						}
 					} else if (methodName.startsWith("is")) {
 						// type = boolean
@@ -317,7 +326,8 @@ public class HBaseClient {
 						columnValue = StringUtil.nullHandle(o);
 					}
 					if (columnValue != null) {
-						put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnName), Bytes.toBytes(columnValue));
+						put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnName),
+								Bytes.toBytes(columnValue));
 					}
 				}
 			}
@@ -330,11 +340,14 @@ public class HBaseClient {
 	}
 
 	/**
-	 * key column(keyName+keyValue) value soNumber1 itemnumber-00-995-291 jsonString itemnumber-00-995-292 jsonString itemnumber-00-995-293 jsonString soNumber2 itemnumber-00-995-291 jsonString
+	 * key column(keyName+keyValue) value soNumber1 itemnumber-00-995-291 jsonString
+	 * itemnumber-00-995-292 jsonString itemnumber-00-995-293 jsonString soNumber2
+	 * itemnumber-00-995-291 jsonString
 	 */
 
 	@SuppressWarnings("unchecked")
-	public <M> Put treatHBaseEntry4Subkey(String columnFamily, String rowKey, List<String> subKeyNames, Class<M> mClass, Object obj) {
+	public <M> Put treatHBaseEntry4Subkey(String columnFamily, String rowKey, List<String> subKeyNames, Class<M> mClass,
+			Object obj) {
 		Put put = new Put(Bytes.toBytes(rowKey));
 		String subRowKey = "";
 		try {
@@ -436,7 +449,7 @@ public class HBaseClient {
 				if (r == null)
 					continue;
 				innerObject = get(r, columnFamily);
-				if(innerObject!=null)
+				if (innerObject != null)
 					list.add(innerObject);
 			}
 		} catch (IllegalArgumentException e) {
@@ -448,7 +461,7 @@ public class HBaseClient {
 		}
 		return list;
 	}
-	
+
 	/**
 	 * hbase get for rowKeys
 	 * 
@@ -477,7 +490,7 @@ public class HBaseClient {
 				if (r == null)
 					continue;
 				innerObject = get(r, columnFamily);
-				if(innerObject!=null)
+				if (innerObject != null)
 					array.add(innerObject);
 			}
 		} catch (IllegalArgumentException e) {
@@ -533,7 +546,8 @@ public class HBaseClient {
 	 * @param rowKeys
 	 * @return
 	 */
-	public List<JsonObject> get(String tableName, String columnFamily, List<String> columnQualifiers, List<String> rowKeys) {
+	public List<JsonObject> get(String tableName, String columnFamily, List<String> columnQualifiers,
+			List<String> rowKeys) {
 		List<JsonObject> list = new ArrayList<>();
 		JsonObject innerObject = new JsonObject();
 		byte[] TABLE_NAME = Bytes.toBytes(tableName);
@@ -614,15 +628,20 @@ public class HBaseClient {
 						String type = method[i].getGenericParameterTypes()[0].toString();
 						try {
 							if (type.contains("Date")) {
-								method[i].invoke(entity, DateUtil.getDate(jsonobj.get(columnName).getAsString(), "yyyy-MM-dd HH:mm:ss"));
+								method[i].invoke(entity,
+										DateUtil.getDate(jsonobj.get(columnName).getAsString(), "yyyy-MM-dd HH:mm:ss"));
 							} else if (type.contains("Long") || type.contains("long")) {
-								method[i].invoke(entity, isJsonEmpty(jsonobj.get(columnName)) ? 0 : jsonobj.get(columnName).getAsLong());
+								method[i].invoke(entity,
+										isJsonEmpty(jsonobj.get(columnName)) ? 0 : jsonobj.get(columnName).getAsLong());
 							} else if (type.contains("Double") || type.contains("double")) {
-								method[i].invoke(entity, isJsonEmpty(jsonobj.get(columnName)) ? 0.0 : jsonobj.get(columnName).getAsDouble());
+								method[i].invoke(entity, isJsonEmpty(jsonobj.get(columnName)) ? 0.0
+										: jsonobj.get(columnName).getAsDouble());
 							} else if (type.contains("Integer") || type.contains("int")) {
-								method[i].invoke(entity, isJsonEmpty(jsonobj.get(columnName)) ? 0 : jsonobj.get(columnName).getAsInt());
+								method[i].invoke(entity,
+										isJsonEmpty(jsonobj.get(columnName)) ? 0 : jsonobj.get(columnName).getAsInt());
 							} else {
-								method[i].invoke(entity, isJsonEmpty(jsonobj.get(columnName)) ? "" : jsonobj.get(columnName).getAsString());
+								method[i].invoke(entity, isJsonEmpty(jsonobj.get(columnName)) ? ""
+										: jsonobj.get(columnName).getAsString());
 							}
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -665,7 +684,8 @@ public class HBaseClient {
 			// family, qualifier, compareOp, new BinaryComparator(value)
 
 			FilterList filterList = new FilterList();
-			Filter filter = new SingleColumnValueFilter(Bytes.toBytes(family), Bytes.toBytes(qualifier), CompareOp.EQUAL, Bytes.toBytes(value));
+			Filter filter = new SingleColumnValueFilter(Bytes.toBytes(family), Bytes.toBytes(qualifier),
+					CompareOp.EQUAL, Bytes.toBytes(value));
 			filterList.addFilter(filter);
 			// org.apache.hadoop.hbase.filter.Filter filter = new
 			// ValueFilter(CompareOp valueCompareOp,final ByteArrayComparable
@@ -717,7 +737,8 @@ public class HBaseClient {
 
 			FilterList filterList = new FilterList();
 			for (String qualifier : qualifierValueMapping.keySet()) {
-				Filter filter = new SingleColumnValueFilter(Bytes.toBytes(family), Bytes.toBytes(qualifier), CompareOp.EQUAL, Bytes.toBytes(qualifierValueMapping.get(qualifier)));
+				Filter filter = new SingleColumnValueFilter(Bytes.toBytes(family), Bytes.toBytes(qualifier),
+						CompareOp.EQUAL, Bytes.toBytes(qualifierValueMapping.get(qualifier)));
 				filterList.addFilter(filter);
 			}
 			// filterList.addFilter(new FirstKeyOnlyFilter()); count
@@ -931,14 +952,16 @@ public class HBaseClient {
 		return rowCount;
 	}
 
-	public long rowCountFamilyByTimeRange(String tableName, String family, Long timeStart, Long timeEnd) throws Throwable {
+	public long rowCountFamilyByTimeRange(String tableName, String family, Long timeStart, Long timeEnd)
+			throws Throwable {
 		Configuration configuration = HBaseConnection.getConfiguration();
 		configuration.setLong("hbase.rpc.timeout", 600000);
 		AggregationClient aggregationClient = new AggregationClient(configuration);
 		Scan scan = new Scan();
 		scan.addFamily(Bytes.toBytes(family));
 		// Long timeStart = DateUtil.getDate("2018-08-22 00:00:00").getTime();
-		// Long timeEnd = DateUtil.getDate(DateUtil.getDateTime(new Date(), "yyyy-MM-dd HH:mm:ss")).getTime();
+		// Long timeEnd = DateUtil.getDate(DateUtil.getDateTime(new Date(), "yyyy-MM-dd
+		// HH:mm:ss")).getTime();
 		logger.info("time range:" + timeStart + "~" + timeEnd);
 		scan.setTimeRange(timeStart, timeEnd);
 		long rowCount = aggregationClient.rowCount(TableName.valueOf(tableName), new LongColumnInterpreter(), scan);
@@ -958,6 +981,5 @@ public class HBaseClient {
 		long rowCount = aggregationClient.rowCount(TableName.valueOf(tableName), new LongColumnInterpreter(), scan);
 		return rowCount;
 	}
-
 
 }
